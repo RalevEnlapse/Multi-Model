@@ -1,15 +1,4 @@
-/*
- * NOTE:
- * This project uses Tailwind classNames in components, but importing Tailwind here
- * via `@import "tailwindcss";` requires Tailwind's CSS entrypoint resolution.
- *
- * In some Windows setups (or when workspace folder names include spaces), Next's
- * resolver can try to locate `tailwindcss` from the parent directory and fail
- * with: "Can't resolve 'tailwindcss' in 'd:\\Code\\5 - Multi agent'".
- *
- * To keep the app running (and unblock debugging the original API error), we
- * remove the Tailwind import and keep minimal base styles.
- */
+@import "tailwindcss";
 
 :root {
   --background: #ffffff;
