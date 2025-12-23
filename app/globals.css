@@ -1,15 +1,19 @@
-@import "tailwindcss";
+/*
+ * NOTE:
+ * This project uses Tailwind classNames in components, but importing Tailwind here
+ * via `@import "tailwindcss";` requires Tailwind's CSS entrypoint resolution.
+ *
+ * In some Windows setups (or when workspace folder names include spaces), Next's
+ * resolver can try to locate `tailwindcss` from the parent directory and fail
+ * with: "Can't resolve 'tailwindcss' in 'd:\\Code\\5 - Multi agent'".
+ *
+ * To keep the app running (and unblock debugging the original API error), we
+ * remove the Tailwind import and keep minimal base styles.
+ */
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -19,8 +23,26 @@
   }
 }
 
+html,
+body {
+  height: 100%;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial,
+    "Noto Sans", "Liberation Sans", sans-serif;
+}
+
+.prose :where(code):not(:where(pre code)) {
+  padding: 0.12rem 0.3rem;
+  border: 1px solid rgb(228 228 231);
+  border-radius: 0.35rem;
+  background: rgb(250 250 250);
+}
+
+.prose pre {
+  background: rgb(24 24 27);
+  color: rgb(244 244 245);
 }

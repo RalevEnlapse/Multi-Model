@@ -1,36 +1,87 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Automated Market Research Team (Multi‑Agent Demo)
 
-## Getting Started
+Production-ready Next.js (App Router) + TypeScript web app demonstrating a collaborative multi-agent system for automated market research using the OpenAI Agents SDK.
 
-First, run the development server:
+## Custom OpenAI client / base URL
+
+Set optional env vars to use a custom OpenAI-compatible gateway:
+- `OPENAI_BASE_URL` (example: `https://api.openai.com/v1`)
+- `OPENAI_API_MODE` (`responses` or `chat_completions`)
+- `OPENAI_AGENTS_DISABLE_TRACING=1` to disable the Agents SDK tracing exporter (suppresses noisy non-fatal tracing errors)
+
+This is wired in [`initOpenAI()`](lib/server/openai.ts:1) and called before each run from [`orchestrateRun()`](lib/server/orchestrate.ts:151).
+
+## What it does
+
+Given a competitor name (e.g. “Competitor X”), the system generates a competitor brief.
+
+**Two run modes:**
+- **Sequential:** NewsResearcher → FinancialAnalyst → ReportWriter
+- **Hierarchical:** Manager coordinates NewsResearcher + FinancialAnalyst, requests one revision if needed, then hands off to ReportWriter
+
+**UX:**
+- live activity log via Server-Sent Events (SSE)
+- final memo rendered from markdown
+- “View raw outputs” panel to inspect intermediate agent outputs
+
+## Tech stack
+- Next.js App Router
+- TypeScript
+- Tailwind CSS
+- OpenAI Agents SDK via [`@openai/agents`](package.json:12)
+- Tavily web search (`TAVILY_API_KEY`)
+- Alpha Vantage finance (`ALPHA_VANTAGE_API_KEY`) with deterministic mock fallback
+
+## Setup
+
+1) Install dependencies
+
+```bash
+npm install
+```
+
+2) Create your env file
+
+Copy [`.env.example`](.env.example:1) to `.env.local` and fill in values:
+
+- `OPENAI_API_KEY` (required)
+- `TAVILY_API_KEY` (recommended; otherwise news will be empty with warnings)
+- `ALPHA_VANTAGE_API_KEY` (optional; if missing, finance tool uses deterministic mock values)
+
+3) Run dev
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## How it works (code map)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- API route (SSE): [`GET/POST /api/run`](app/api/run/route.ts:1)
+- Orchestration logic (sequential vs hierarchical): [`orchestrateRun()`](lib/server/orchestrate.ts:1)
+- SSE writer helper: [`createSseWriter()`](lib/server/sse.ts:1)
+- Agents:
+  - News researcher: [`NewsResearcherAgent`](lib/agents/agents.ts:1)
+  - Finance analyst: [`FinancialAnalystAgent`](lib/agents/agents.ts:1)
+  - Report writer: [`ReportWriterAgent`](lib/agents/agents.ts:1)
+  - Manager (hierarchical): [`ManagerAgent`](lib/agents/agents.ts:1)
+- Tools:
+  - Tavily search: [`tavilyWebSearch()`](lib/tools/tavily.ts:1)
+  - Finance lookup (Alpha Vantage + mock fallback): [`financeLookup()`](lib/tools/finance.ts:1)
+  - In-memory caching (10 min TTL): [`getCache()`](lib/tools/cache.ts:1)
 
-## Learn More
+## Notes on streaming
 
-To learn more about Next.js, take a look at the following resources:
+The UI uses `EventSource` (SSE) to stream progress messages in real time.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Start a run by opening `/api/run?competitor=...&mode=...`
+- The server emits `log`, `raw`, `final`, `error`, and `done` events.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Security notes
+- API keys are only used server-side in route handlers and tool implementations.
+- The browser talks to the server via SSE; no secrets are exposed.
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Troubleshooting
+- If you see `OPENAI_API_KEY is missing`, add it to `.env.local` and restart the dev server.
+- If Tavily fails / rate limits, you’ll still get a partial report with warnings.
