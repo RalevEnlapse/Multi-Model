@@ -23,7 +23,6 @@ function mockFinance(company: string): FinanceLookupOutput {
   const grossMargin = 0.35 + ((seed % 25) / 100); // 35% - 60%
   const yoy = -0.05 + ((seed % 30) / 100); // -5% to +25%
   const headcount = 400 + (seed % 6500);
-  const cash = 50_000_000 + (seed % 450_000_000);
 
   const key_metrics: Record<string, string | number> = {
     "Revenue (est.)": `$${(revenue / 1e9).toFixed(2)}B`,
@@ -91,12 +90,14 @@ export async function financeLookup(company: string): Promise<FinanceLookupOutpu
       return value;
     }
 
-    const searchJson = (await searchRes.json()) as any;
+    const searchJson = (await searchRes.json()) as {
+      bestMatches?: unknown;
+    };
     const best = Array.isArray(searchJson?.bestMatches)
-      ? searchJson.bestMatches[0]
+      ? (searchJson.bestMatches[0] as Record<string, unknown> | undefined)
       : undefined;
 
-    const symbol: string | undefined = best?.["1. symbol"];
+    const symbol = typeof best?.["1. symbol"] === "string" ? (best["1. symbol"] as string) : undefined;
 
     if (!symbol) {
       const value: FinanceLookupOutput = {
@@ -125,8 +126,13 @@ export async function financeLookup(company: string): Promise<FinanceLookupOutpu
     quoteUrl.searchParams.set("apikey", apiKey);
 
     const quoteRes = await fetch(quoteUrl.toString());
-    const quoteJson = quoteRes.ok ? ((await quoteRes.json()) as any) : null;
-    const q = quoteJson?.["Global Quote"];
+    const quoteJson = quoteRes.ok
+      ? ((await quoteRes.json()) as Record<string, unknown>)
+      : null;
+    const q =
+      quoteJson && typeof quoteJson === "object"
+        ? (quoteJson["Global Quote"] as Record<string, unknown> | undefined)
+        : undefined;
 
     const price = q?.["05. price"] ? Number(q["05. price"]) : undefined;
     const changePercent = q?.["10. change percent"]
@@ -140,8 +146,8 @@ export async function financeLookup(company: string): Promise<FinanceLookupOutpu
         Symbol: symbol,
         "Last price": price ?? "unknown",
         "Change percent": changePercent ?? "unknown",
-        "Exchange": best?.["4. region"] ?? "unknown",
-        Currency: best?.["8. currency"] ?? "unknown",
+        "Exchange": typeof best?.["4. region"] === "string" ? (best["4. region"] as string) : "unknown",
+        Currency: typeof best?.["8. currency"] === "string" ? (best["8. currency"] as string) : "unknown",
       },
       performance_summary:
         "Public-market snapshot based on Alpha Vantage symbol search and global quote. Revenue/profitability are not provided by this endpoint.",

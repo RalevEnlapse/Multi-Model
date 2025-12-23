@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@openai/agents": "^0.3.7",
+    "mermaid": "^11.12.2",
     "next": "16.1.1",
     "openai": "^6.15.0",
     "react": "19.2.3",

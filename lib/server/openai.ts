@@ -1,7 +1,6 @@
 import { OpenAI } from "openai";
 import {
   setDefaultOpenAIClient,
-  setDefaultOpenAIKey,
   setOpenAIAPI,
   setTracingDisabled,
 } from "@openai/agents";
@@ -75,7 +74,8 @@ export function initOpenAI(): void {
   // (Fixes gateways that return {"detail":"Model not found"} when model is omitted or mismatched.)
   if (defaultModel) {
     try {
-      (globalThis as any).__OPENAI_AGENTS_DEFAULT_MODEL__ = defaultModel;
+      (globalThis as typeof globalThis & { __OPENAI_AGENTS_DEFAULT_MODEL__?: string }).__OPENAI_AGENTS_DEFAULT_MODEL__ =
+        defaultModel;
     } catch {
       // ignore
     }
@@ -98,7 +98,7 @@ export function initOpenAI(): void {
               : String(input);
 
       const started = Date.now();
-      const res = await fetch(input as any, init as any);
+      const res = await fetch(input, init);
       const ms = Date.now() - started;
 
       if (!res.ok || process.env.OPENAI_DEBUG_HTTP === "1") {
