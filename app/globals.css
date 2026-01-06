@@ -68,12 +68,55 @@ body {
   border: 1px solid rgb(63 63 70 / 0.6);
   border-radius: 0.45rem;
   background: rgb(9 9 11 / 0.6);
+  color: rgb(253 224 71); /* yellow-300 */
 }
 
 .prose pre {
   background: rgb(9 9 11 / 0.72);
   color: rgb(244 244 245);
   border: 1px solid rgb(63 63 70 / 0.55);
+}
+
+/* More colorful markdown headings/lists/quotes */
+.prose.prose-invert :where(h1) {
+  color: rgb(196 181 253); /* violet-300 */
+}
+
+.prose.prose-invert :where(h2) {
+  color: rgb(125 211 252); /* sky-300 */
+}
+
+.prose.prose-invert :where(h3) {
+  color: rgb(134 239 172); /* emerald-300 */
+}
+
+.prose.prose-invert :where(strong) {
+  color: rgb(250 250 250);
+}
+
+.prose.prose-invert :where(blockquote) {
+  border-left-color: rgb(125 211 252 / 0.65);
+  background: rgb(2 6 23 / 0.35);
+}
+
+.prose.prose-invert :where(ul > li)::marker,
+.prose.prose-invert :where(ol > li)::marker {
+  color: rgb(216 180 254); /* purple-300 */
+}
+
+.prose.prose-invert :where(a) {
+  color: rgb(125 211 252);
+  text-decoration-color: rgb(125 211 252 / 0.5);
+}
+
+/* Highlight ISO dates like 2025-03-18 in rendered markdown */
+.prose.prose-invert :where(.md-date) {
+  color: rgb(251 191 36); /* amber-400 */
+  font-weight: 600;
+}
+
+.prose.prose-invert :where(a:hover) {
+  text-decoration-color: rgb(125 211 252 / 0.9);
 }
 
 /* Tables (GFM) */
@@ -164,4 +207,30 @@ body {
 .output-scroll {
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
+}
+
+/* JSON-ish highlighting (raw outputs) */
+.json-key {
+  color: rgb(125 211 252); /* sky-300 */
+}
+
+.json-string {
+  color: rgb(134 239 172); /* emerald-300 */
+}
+
+.json-number {
+  color: rgb(253 224 71); /* yellow-300 */
+}
+
+.json-literal {
+  color: rgb(216 180 254); /* purple-300 */
+}
+
+.json-date {
+  color: rgb(251 191 36); /* amber-400 */
+}
+
+.json-bracket,
+.json-brace {
+  color: rgb(148 163 184); /* slate-400 */
 }

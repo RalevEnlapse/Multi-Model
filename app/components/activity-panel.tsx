@@ -1,5 +1,6 @@
 import type { AgentName, RunRawOutputs } from "../../lib/types";
 
+import { JsonHighlight } from "../../lib/ui/json-highlight";
 import { Badge, Card, CardBody, CardHeader, CardMeta, CardTitle } from "../../lib/ui/primitives";
 
 export type UiState = "idle" | "running" | "done" | "error";
@@ -52,10 +53,34 @@ export function LiveActivityPanel({ state, activity }: ActivityPanelProps) {
             <ul className="space-y-2">
               {activity.map((it, idx) => (
                 <li key={idx} className="relative pl-4 text-xs leading-relaxed">
-                  <span className="absolute left-0 top-1.5 h-1.5 w-1.5 rounded-full bg-zinc-600" />
+                  <span
+                    className={
+                      "absolute left-0 top-1.5 h-1.5 w-1.5 rounded-full " +
+                      (it.agent === "Manager"
+                        ? "bg-violet-400/70"
+                        : it.agent === "NewsResearcher"
+                          ? "bg-sky-400/70"
+                          : it.agent === "FinancialAnalyst"
+                            ? "bg-emerald-400/70"
+                            : "bg-amber-400/70")
+                    }
+                  />
                   <span className="font-mono text-zinc-500">{new Date(it.ts).toLocaleTimeString()}</span>
                   <span className="text-zinc-500"> · </span>
-                  <span className="font-semibold text-zinc-200">{it.agent}</span>
+                  <span
+                    className={
+                      "font-semibold " +
+                      (it.agent === "Manager"
+                        ? "text-violet-200"
+                        : it.agent === "NewsResearcher"
+                          ? "text-sky-200"
+                          : it.agent === "FinancialAnalyst"
+                            ? "text-emerald-200"
+                            : "text-amber-200")
+                    }
+                  >
+                    {it.agent}
+                  </span>
                   <span className="text-zinc-500"> — </span>
                   <span className="text-zinc-300">{it.message}</span>
                 </li>
@@ -92,9 +117,17 @@ export function RawOutputsPanel({ rawEntries }: RawOutputsPanelProps) {
                 {rawEntries.map((entry) => (
                   <div key={entry.agent}>
                     <div className="text-xs font-semibold text-zinc-200">{entry.agent}</div>
-                    <pre className="output-scroll mt-2 max-h-72 overflow-auto rounded-xl border border-zinc-800/70 bg-zinc-950/35 p-3 text-[11px] leading-relaxed text-zinc-100">
-                      {typeof entry.value === "string" ? entry.value : JSON.stringify(entry.value, null, 2)}
-                    </pre>
+                    <div className="output-scroll mt-2 max-h-72 overflow-auto rounded-xl border border-zinc-800/70 bg-zinc-950/35 p-3 text-[11px] leading-relaxed text-zinc-100">
+                      {entry.agent === "ReportWriter" && typeof entry.value === "string" ? (
+                        <pre className="whitespace-pre-wrap break-words text-zinc-100">
+                          <span className="text-emerald-300"># Markdown</span>
+                          {"\n\n"}
+                          <span className="text-sky-300">{entry.value}</span>
+                        </pre>
+                      ) : (
+                        <JsonHighlight value={entry.value} />
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
