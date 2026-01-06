@@ -8,6 +8,7 @@ import type { StoredSseEvent } from "../../lib/server/run-history";
 import HistoryPanel from "../components/history-panel";
 import FinancePriceChangeChart from "../components/finance-price-change-chart";
 import FinanceTrendChart from "../components/finance-trend-chart";
+import TradingViewWidget from "../components/tradingview-widget";
 import { Card, CardBody, CardHeader, CardMeta, CardTitle } from "../../lib/ui/primitives";
 
 function extractFinanceFromEvents(events: StoredSseEvent[]): FinanceLookupOutput | undefined {
@@ -147,6 +148,7 @@ export default function ChartsPage() {
                   </div>
                 ) : (
                   <>
+                    <TradingViewWidget finance={finance} />
                     <FinanceTrendChart finance={finance} />
                     <FinancePriceChangeChart finance={finance} />
 
