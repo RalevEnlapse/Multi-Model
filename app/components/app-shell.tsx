@@ -92,7 +92,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                         />
                       </svg>
                     </summary>
-                    <div className="p-2">
+                    <div className="max-h-[52vh] overflow-auto p-2">
                       <HistoryPanel
                         title=""
                         className="border-0 bg-transparent shadow-none"
