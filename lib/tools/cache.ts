@@ -3,7 +3,13 @@ type CacheEntry<T> = {
   expiresAt: number;
 };
 
-const store = new Map<string, CacheEntry<unknown>>();
+// In Next.js dev/hot-reload, module scope can be duplicated per route or replaced.
+// Keep the cache in a global singleton so /api/run and /api/history share the same memory.
+const store: Map<string, CacheEntry<unknown>> =
+  (globalThis as typeof globalThis & { __MM_CACHE__?: Map<string, CacheEntry<unknown>> }).__MM_CACHE__ ??
+  new Map<string, CacheEntry<unknown>>();
+
+(globalThis as typeof globalThis & { __MM_CACHE__?: Map<string, CacheEntry<unknown>> }).__MM_CACHE__ = store;
 
 export function getCache<T>(key: string): T | undefined {
   const entry = store.get(key);

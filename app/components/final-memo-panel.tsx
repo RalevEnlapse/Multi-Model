@@ -8,7 +8,7 @@ export type FinalMemoPanelProps = {
 
 export default function FinalMemoPanel({ finalMarkdown }: FinalMemoPanelProps) {
   return (
-    <Card className="flex min-h-0 flex-col overflow-hidden lg:col-span-7" variant="default">
+    <Card className="flex min-h-0 flex-col overflow-hidden" variant="default">
       <CardBody className="flex min-h-0 flex-col">
         <CardHeader className="shrink-0">
           <div className="min-w-0">

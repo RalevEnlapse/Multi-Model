@@ -21,6 +21,14 @@ export const FinanceOutputSchema = z.object({
   company: z.string().default(""),
   company_type: z.enum(["public", "private", "unknown"]),
   key_metrics: z.record(z.string(), z.union([z.string(), z.number()])),
+  price_series: z
+    .array(
+      z.object({
+        date: z.string(),
+        close: z.number(),
+      })
+    )
+    .optional(),
   performance_summary: z.string(),
   risks: z.array(z.string()).default([]),
   confidence: z.enum(["high", "medium", "low"]),

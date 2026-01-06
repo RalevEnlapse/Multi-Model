@@ -62,6 +62,9 @@ export async function financeLookup(company: string): Promise<FinanceLookupOutpu
   if (cached) return cached;
 
   const apiKey = process.env.ALPHA_VANTAGE_API_KEY;
+  // Strict no-mock rule for charts: without a real provider key, we still return a mocked
+  // FinanceLookupOutput for memo generation, but we explicitly mark it as mock and never
+  // attach a time series.
   if (!apiKey) {
     const value = mockFinance(company);
     setCache(cacheKey, value, TEN_MINUTES_MS);
@@ -104,7 +107,7 @@ export async function financeLookup(company: string): Promise<FinanceLookupOutpu
         company,
         company_type: "unknown",
         key_metrics: {
-          "Coverage": "No public symbol found via Alpha Vantage",
+          Coverage: "No public symbol found via Alpha Vantage",
         },
         performance_summary:
           "Could not find a reliable public ticker symbol for this competitor; returning limited metrics.",
@@ -120,6 +123,7 @@ export async function financeLookup(company: string): Promise<FinanceLookupOutpu
       return value;
     }
 
+    // Quote (last price + change percent)
     const quoteUrl = new URL("https://www.alphavantage.co/query");
     quoteUrl.searchParams.set("function", "GLOBAL_QUOTE");
     quoteUrl.searchParams.set("symbol", symbol);
@@ -135,9 +139,57 @@ export async function financeLookup(company: string): Promise<FinanceLookupOutpu
         : undefined;
 
     const price = q?.["05. price"] ? Number(q["05. price"]) : undefined;
-    const changePercent = q?.["10. change percent"]
-      ? String(q["10. change percent"])
-      : undefined;
+    const changePercent = q?.["10. change percent"] ? String(q["10. change percent"]) : undefined;
+
+    // Daily time series (trend chart). We keep last 90 days.
+    const seriesUrl = new URL("https://www.alphavantage.co/query");
+    seriesUrl.searchParams.set("function", "TIME_SERIES_DAILY");
+    seriesUrl.searchParams.set("symbol", symbol);
+    // Use compact to reduce payload and rate-limit risk.
+    seriesUrl.searchParams.set("outputsize", "compact");
+    seriesUrl.searchParams.set("apikey", apiKey);
+
+    let price_series: Array<{ date: string; close: number }> | undefined;
+    try {
+      const seriesRes = await fetch(seriesUrl.toString());
+      if (seriesRes.ok) {
+        const seriesJson = (await seriesRes.json()) as Record<string, unknown>;
+
+        // Alpha Vantage returns {"Error Message": ...} and/or {"Note": ...} on failures/rate-limits.
+        const maybeError =
+          typeof seriesJson["Error Message"] === "string"
+            ? (seriesJson["Error Message"] as string)
+            : typeof seriesJson["Note"] === "string"
+              ? (seriesJson["Note"] as string)
+              : undefined;
+
+        if (!maybeError) {
+          const ts = seriesJson["Time Series (Daily)"] as Record<string, unknown> | undefined;
+
+          if (ts && typeof ts === "object") {
+            const points: Array<{ date: string; close: number }> = [];
+            for (const [date, v] of Object.entries(ts)) {
+              if (!v || typeof v !== "object") continue;
+              const closeRaw = (v as Record<string, unknown>)["4. close"];
+              const close =
+                typeof closeRaw === "string"
+                  ? Number(closeRaw)
+                  : typeof closeRaw === "number"
+                    ? closeRaw
+                    : NaN;
+              if (Number.isFinite(close)) points.push({ date, close });
+            }
+
+            // Sort ascending and take last 90 points.
+            points.sort((a, b) => a.date.localeCompare(b.date));
+            price_series = points.slice(-90);
+          }
+        }
+      }
+    } catch {
+      // If series fails, we still return quote metrics; trend chart will not render.
+      // (Do not mark as mock; we still have real quote data.)
+    }
 
     const value: FinanceLookupOutput = {
       company,
@@ -146,16 +198,17 @@ export async function financeLookup(company: string): Promise<FinanceLookupOutpu
         Symbol: symbol,
         "Last price": price ?? "unknown",
         "Change percent": changePercent ?? "unknown",
-        "Exchange": typeof best?.["4. region"] === "string" ? (best["4. region"] as string) : "unknown",
+        Exchange: typeof best?.["4. region"] === "string" ? (best["4. region"] as string) : "unknown",
         Currency: typeof best?.["8. currency"] === "string" ? (best["8. currency"] as string) : "unknown",
       },
+      price_series,
       performance_summary:
-        "Public-market snapshot based on Alpha Vantage symbol search and global quote. Revenue/profitability are not provided by this endpoint.",
+        "Public-market snapshot based on Alpha Vantage symbol search, global quote, and daily close series (when available). Revenue/profitability are not provided by this endpoint.",
       risks: [
         "Alpha Vantage free endpoints may be rate-limited.",
-        "Revenue/profitability require additional data sources beyond GLOBAL_QUOTE.",
+        "Revenue/profitability require additional data sources beyond price series.",
       ],
-      confidence: "medium",
+      confidence: price_series?.length ? "medium" : "low",
       warnings: [],
       sources: ["https://www.alphavantage.co"],
     };

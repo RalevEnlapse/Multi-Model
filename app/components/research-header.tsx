@@ -20,7 +20,7 @@ export default function ResearchHeader({
           {title}
         </span>
       </h1>
-      <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-400">{description}</p>
+      <p className="mt-2 w-full text-sm leading-relaxed text-zinc-400">{description}</p>
     </header>
   );
 }

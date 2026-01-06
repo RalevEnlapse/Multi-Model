@@ -13,6 +13,9 @@ export type ActivityItem = {
 export type ActivityPanelProps = {
   state: UiState;
   activity: ActivityItem[];
+};
+
+export type RawOutputsPanelProps = {
   rawEntries: Array<{ agent: AgentName; value: RunRawOutputs[AgentName] }>;
 };
 
@@ -23,11 +26,11 @@ function stateBadge(state: UiState) {
   return { tone: "zinc" as const, label: "idle" };
 }
 
-export default function ActivityPanel({ state, activity, rawEntries }: ActivityPanelProps) {
+export function LiveActivityPanel({ state, activity }: ActivityPanelProps) {
   const badge = stateBadge(state);
 
   return (
-    <Card className="flex min-h-0 flex-col lg:col-span-5" variant="default">
+    <Card className="flex min-h-0 flex-col" variant="default">
       <CardBody className="flex min-h-0 flex-col">
         <CardHeader>
           <div className="min-w-0">
@@ -60,30 +63,47 @@ export default function ActivityPanel({ state, activity, rawEntries }: ActivityP
             </ul>
           )}
         </div>
-
-        <details className="group mt-4 rounded-xl border border-zinc-800/70 bg-zinc-950/20 p-3">
-          <summary className="cursor-pointer list-none text-sm font-medium text-zinc-200">
-            <span className="inline-flex items-center gap-2">
-              Raw outputs
-              <span className="text-xs text-zinc-500">(debug)</span>
-            </span>
-          </summary>
-          <div className="mt-3 space-y-3">
-            {rawEntries.length === 0 ? (
-              <p className="text-xs text-zinc-500">No raw outputs yet.</p>
-            ) : (
-              rawEntries.map((entry) => (
-                <div key={entry.agent}>
-                  <div className="text-xs font-semibold text-zinc-200">{entry.agent}</div>
-                  <pre className="output-scroll mt-2 max-h-56 overflow-auto rounded-xl border border-zinc-800/70 bg-zinc-950/35 p-3 text-[11px] leading-relaxed text-zinc-100">
-                    {typeof entry.value === "string" ? entry.value : JSON.stringify(entry.value, null, 2)}
-                  </pre>
-                </div>
-              ))
-            )}
-          </div>
-        </details>
       </CardBody>
     </Card>
   );
 }
+
+export function RawOutputsPanel({ rawEntries }: RawOutputsPanelProps) {
+  return (
+    <Card className="flex min-h-0 flex-col" variant="default">
+      <CardBody className="flex min-h-0 flex-col">
+        <CardHeader>
+          <div className="min-w-0">
+            <CardTitle>Raw outputs</CardTitle>
+            <CardMeta className="mt-1 block">Debug payloads (JSON).</CardMeta>
+          </div>
+          <Badge tone={rawEntries.length > 0 ? "green" : "zinc"}>{rawEntries.length > 0 ? "ready" : "pending"}</Badge>
+        </CardHeader>
+
+        <div className="mt-4 flex-1 min-h-0 overflow-hidden rounded-xl border border-zinc-800/70 bg-zinc-950/35">
+          <div className="output-scroll h-full overflow-auto p-4">
+            {rawEntries.length === 0 ? (
+              <div className="rounded-xl border border-zinc-800/60 bg-zinc-950/20 p-4">
+                <div className="text-sm font-medium text-zinc-200">No raw outputs yet</div>
+                <p className="mt-1 text-sm leading-relaxed text-zinc-500">Raw agent payloads will stream in during a run.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {rawEntries.map((entry) => (
+                  <div key={entry.agent}>
+                    <div className="text-xs font-semibold text-zinc-200">{entry.agent}</div>
+                    <pre className="output-scroll mt-2 max-h-72 overflow-auto rounded-xl border border-zinc-800/70 bg-zinc-950/35 p-3 text-[11px] leading-relaxed text-zinc-100">
+                      {typeof entry.value === "string" ? entry.value : JSON.stringify(entry.value, null, 2)}
+                    </pre>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </CardBody>
+    </Card>
+  );
+}
+
+export default LiveActivityPanel;

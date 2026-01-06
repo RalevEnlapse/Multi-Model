@@ -1,6 +1,8 @@
 import type { Mode, NewsResearcherOutput, FinanceLookupOutput } from "../types";
 import { initOpenAI } from "./openai";
-import { createSseWriter, type SseWriter } from "./sse";
+import type { SseWriter } from "./sse";
+import { createRecordingSseWriter } from "./sse-recording";
+import { saveRunToHistory } from "./run-history";
 import {
   FinancialAnalystAgent,
   ManagerAgent,
@@ -153,7 +155,7 @@ export async function orchestrateRun(params: {
   controller: ReadableStreamDefaultController<Uint8Array>;
 }): Promise<void> {
   const competitor = clampCompetitor(params.competitor);
-  const writer = createSseWriter(params.controller);
+  const writer = createRecordingSseWriter(params.controller);
 
   // Ensure custom OpenAI client + baseURL settings are applied before first run.
   initOpenAI();
@@ -183,6 +185,7 @@ export async function orchestrateRun(params: {
 
       await runWriter({ competitor, writer, news, finance, warnings });
       writer.done();
+      saveRunToHistory({ competitor, mode: params.mode, events: writer.events });
       return;
     }
 
@@ -228,10 +231,12 @@ export async function orchestrateRun(params: {
 
     await runWriter({ competitor, writer, news, finance, warnings });
     writer.done();
+    saveRunToHistory({ competitor, mode: params.mode, events: writer.events });
   } catch (err) {
     writer.error("Run failed", {
       message: err instanceof Error ? err.message : safeString(err),
     });
     writer.done();
+    saveRunToHistory({ competitor, mode: params.mode, events: writer.events });
   }
 }

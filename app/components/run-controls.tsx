@@ -15,6 +15,8 @@ export type RunControlsProps = {
   state: UiState;
   startRun: () => void;
   error?: string;
+  forceFresh: boolean;
+  setForceFresh: (value: boolean) => void;
 };
 
 export default function RunControls({
@@ -26,6 +28,8 @@ export default function RunControls({
   state,
   startRun,
   error,
+  forceFresh,
+  setForceFresh,
 }: RunControlsProps) {
   const statusTone = state === "running" ? "amber" : state === "done" ? "green" : state === "error" ? "red" : "zinc";
   const statusLabel =
@@ -60,13 +64,23 @@ export default function RunControls({
           <div className="md:col-span-3">
             <label className="text-sm font-medium text-zinc-200">Process mode</label>
             <Select className="mt-2" value={mode} onChange={(e) => setMode(e.target.value as Mode)}>
-              <option value="sequential">Sequential</option>
-              <option value="hierarchical">Hierarchical</option>
+              <option className="text-neutral-800" value="sequential">Sequential</option>
+              <option className="text-neutral-800" value="hierarchical">Hierarchical</option>
             </Select>
             <CardMeta className="mt-2 block">Sequential: News → Finance → Report.</CardMeta>
           </div>
 
-          <div className="md:col-span-3 flex items-end">
+          <div className="md:col-span-3 flex flex-col justify-end gap-2">
+            <label className="flex select-none items-center gap-2 text-xs text-zinc-400">
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border-zinc-700 bg-zinc-950/40"
+                checked={forceFresh}
+                onChange={(e) => setForceFresh(e.target.checked)}
+              />
+              Force fresh run (bypass 15-min cache)
+            </label>
+
             <Button className="w-full" onClick={startRun} disabled={!canRun}>
               {state === "running" ? "Running…" : "Generate report"}
             </Button>

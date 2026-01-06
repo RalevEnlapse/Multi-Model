@@ -40,6 +40,11 @@ export type FinanceLookupOutput = {
   company: string;
   company_type: "public" | "private" | "unknown";
   key_metrics: Record<string, string | number>;
+  /**
+   * Optional daily close series used for trend charts.
+   * Only present when real provider data is available (never for mocks).
+   */
+  price_series?: Array<{ date: string; close: number }>;
   performance_summary: string;
   risks: string[];
   confidence: "high" | "medium" | "low";
